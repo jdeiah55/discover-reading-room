@@ -1,0 +1,121 @@
+{
+  "checked": "2026-10-31T15:51:51.491Z",
+  "scope": "Current library-first release, isolated test browser; private CSV is not transmitted or bundled.",
+  "suites": [
+    {
+      "name": "data-and-matching",
+      "passed": true,
+      "seconds": 53.2
+    },
+    {
+      "name": "library-first",
+      "passed": true,
+      "seconds": 11
+    },
+    {
+      "name": "library-management",
+      "passed": true,
+      "seconds": 6
+    },
+    {
+      "name": "reading-tools",
+      "passed": true,
+      "seconds": 11.6
+    },
+    {
+      "name": "match-guide",
+      "passed": true,
+      "seconds": 11.4
+    },
+    {
+      "name": "taste-focus",
+      "passed": true,
+      "seconds": 9.9
+    },
+    {
+      "name": "automatic-matches",
+      "passed": true,
+      "seconds": 9.7
+    },
+    {
+      "name": "curated-partials",
+      "passed": true,
+      "seconds": 8.5
+    },
+    {
+      "name": "partial-ranking",
+      "passed": true,
+      "seconds": 8.2
+    },
+    {
+      "name": "fantasy-enrichment",
+      "passed": true,
+      "seconds": 13.5
+    },
+    {
+      "name": "mood-enrichment",
+      "passed": true,
+      "seconds": 10.5
+    },
+    {
+      "name": "story-depth",
+      "passed": true,
+      "seconds": 34.6
+    },
+    {
+      "name": "editorial",
+      "passed": true,
+      "seconds": 15
+    },
+    {
+      "name": "story-connections",
+      "passed": true,
+      "seconds": 16.2
+    },
+    {
+      "name": "audit-interactions",
+      "passed": true,
+      "seconds": 12
+    },
+    {
+      "name": "deep-audit",
+      "passed": true,
+      "seconds": 15.3
+    },
+    {
+      "name": "readiness",
+      "passed": true,
+      "seconds": 21.5
+    },
+    {
+      "name": "reader-cleanup",
+      "passed": true,
+      "seconds": 8.9
+    },
+    {
+      "name": "series-library",
+      "passed": true,
+      "seconds": 4.1
+    },
+    {
+      "name": "series-coverage",
+      "passed": true,
+      "seconds": 5.9
+    },
+    {
+      "name": "reviewed-116",
+      "passed": true,
+      "seconds": 4.6
+    },
+    {
+      "name": "full-library-scenarios",
+      "passed": true,
+      "seconds": 9.1
+    },
+    {
+      "name": "full-library-browser",
+      "passed": true,
+      "seconds": 63.6
+    }
+  ]
+}
