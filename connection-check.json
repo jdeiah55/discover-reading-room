@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-01",
+  "website": "https://jdeiah55.github.io/discover-reading-room/",
+  "backend": "https://discover-metadata.onrender.com",
+  "deploymentCommit": "624dbc68d150b6a26ae4594ea0409a88f0a7f40a",
+  "health": "passed",
+  "configuration": {"googleBooks": true, "gemini": true},
+  "publicBookLookup": {"title": "The Night Circus", "author": "Erin Morgenstern", "state": "complete", "openLibrary": "responded", "googleBooks": "responded", "suggestedClaims": 21},
+  "isolatedBrowserChecks": [
+    {"book": "The Night Circus", "queue": "complete", "newAutomaticLabels": 0, "detailsVersion": 2, "refreshPersistence": "passed", "javascriptErrors": 0},
+    {"book": "Pride and Prejudice", "queue": "complete", "newAutomaticLabels": 0, "sourceLinkedDescription": "present", "detailsVersion": 2, "refreshPersistence": "passed", "javascriptErrors": 0}
+  ],
+  "scope": "Connection and selected flows only; not a full regression, metadata accuracy study or claim of comprehensive labeling. No actual reader browser data was used."
+}

@@ -1,8 +1,14 @@
 # Discover hosted demonstration preparation
 
-This folder contains a fresh copy of the current browser website in `dist/`. No Python backend, credential store, personal CSV, or browser backup was copied. Search indexing is discouraged using a robots meta tag; this is not access control.
+Live website: https://jdeiah55.github.io/discover-reading-room/
 
-The professor starts with separate browser storage and can choose Try a demonstration library. Core recommendations use local records. The optional enrichment endpoints are not hosted by GitHub Pages and need a separate backend; this preparation does not claim online enrichment is operational.
+Optional metadata backend: https://discover-metadata.onrender.com
+
+The published browser files are in `docs/`. The separate `service/` backend uses private Render environment variables; no API keys, credential store, personal CSV or browser backup are committed. Search indexing is discouraged; this is not access control.
+
+The professor starts with separate browser storage and can choose Try a demonstration library. Core recommendations use browser records. Optional enrichment is connected to the Render backend. Free-host cold starts may delay connection. Supported results can update descriptions and labels; suggestions are screened, not treated as verified facts. Applied data stays in each visitor's browser.
+
+See RENDER-SETUP.md for free-host restart, quota and queue limits. Core recommendations do not require the backend to be awake.
 
 ## Online enrichment requirements
 
