@@ -1,14 +1,58 @@
 # Discover — Personal Library Recommendations
 
-Live website: https://jdeiah55.github.io/discover-reading-room/
+Discover helps readers choose what to read next from their own book collection. Import a list, describe the experience you want or select filters, then inspect the information supporting each suggestion.
 
-Optional metadata backend: https://discover-metadata.onrender.com
+**No installation or sign-in is required to use the hosted website. It remains available when the developer's laptop is off.**
 
-The published browser files are in `docs/`. The separate `service/` backend uses private Render environment variables; no API keys, credential store, personal CSV or browser backup are committed. Search indexing is discouraged; this is not access control.
+## Open the website
 
-The professor starts with separate browser storage and can choose Try a demonstration library. Core recommendations use browser records. Optional enrichment is connected to the Render backend. Free-host cold starts may delay connection. Supported results can update descriptions and labels; suggestions are screened, not treated as verified facts. Applied data stays in each visitor's browser.
+| Version | Link | What opens |
+|---|---|---|
+| **Personal mode** | [Start your own library](https://jdeiah55.github.io/discover-reading-room/?v=20261101-modes) | An empty personal space on first use; your additions are remembered afterward. |
+| **Demonstration mode** | [Explore the sample collection](https://jdeiah55.github.io/discover-reading-room/?demo=1&v=20261101-modes) | A separate collection of 116 entries representing 115 distinct stories. Suitable for assessment without preparing an import. |
+| **Earlier saved library** | [Recover the previous library space](https://jdeiah55.github.io/discover-reading-room/?mode=previous&v=20261101-modes) | Data saved in this browser before personal and demo modes were separated, if present. |
 
-See RENDER-SETUP.md for free-host restart, quota and queue limits. Core recommendations do not require the backend to be awake.
+Personal and demonstration modes have separate libraries, preferences, feedback, saved books and enrichment progress. Switching modes does not replace the other collection. Earlier saved data has not been deleted. These spaces are local to each browser; they are not accounts synchronized between devices.
+
+The version parameter refreshes older cached pages. Scripts and styles also use content-based version URLs so current controls load after updates.
+
+## How to use the updated website
+
+1. **Choose your starting point.** Open personal mode to bring your own collection, or demonstration mode to explore the supplied sample.
+2. **Add books.** Upload a CSV, TSV or TXT list, or use **Add one book**. **Add another book list** merges additions without replacing existing entries. Replacing the entire collection is a separate confirmed action.
+3. **Let details update automatically.** Enrichment starts after an import or addition; there is no start-button step in the default workflow. Books added during an active run join its queue. You can use the available library information while processing continues.
+4. **Express what you want.** Use **Describe the feeling** for a recognized descriptive request, or **Curate my read** for explicit filter selections. Available filter choices reflect the current library's information.
+5. **Inspect the suggestions.** Open a book's matching details to distinguish supported conditions from unresolved information. When no complete match is established, qualified partial alternatives may appear.
+6. **Refine and preserve your experience.** Save titles, tune your taste, correct book details, give feedback or exclude a title from recommendations. Export a complete backup to move or preserve your browser data.
+
+For an assessment-ready sequence and example filters, see [DEMO-GUIDE.md](DEMO-GUIDE.md).
+
+## Supported book-list files
+
+| Format | Structure |
+|---|---|
+| CSV | `Title` and `Author` columns, including standard Goodreads exports. Optional classification columns can contain semicolon-separated labels. |
+| TSV | Tab-separated columns, including optional classification columns; a two-column title/author list can also be imported without a header. |
+| TXT | One book per line using `Title — Author`, `Title | Author` or `Title by Author`. A tab between title and author is also accepted. |
+
+Example text file:
+
+```text
+The Night Circus — Erin Morgenstern
+Pride and Prejudice — Jane Austen
+```
+
+Imports are limited to 10 MB and 10,000 rows. Unsupported formats and ambiguous text lines receive an error rather than a guessed identity. Duplicate entries keep their existing notes. These are book-list imports, not PDF/EPUB uploads or a full-text reading feature.
+
+## Automatic metadata enrichment
+
+Automatic enrichment is enabled by default and can be disabled under **Give your books a little more detail** in library management. **Pause**, **Resume** and assignment undo remain available. A paused queue is not silently resumed merely because another title is added.
+
+The connected service looks up public book identities through Google Books and Open Library. With AI extraction enabled, Gemini proposes labels linked to returned passages. The browser screens these suggestions before assigning supported details, preserves reader corrections, and refreshes filters and active results as working records change. Existing bundled records can also supply information immediately.
+
+**A completed lookup does not mean every field is verified or that new labels must be added.** Suggestions can duplicate existing information, fail identity checks or lack sufficient support. Some details remain unresolved; mood and atmosphere can involve interpretation.
+
+Processing runs in small batches while the website is open. Free-host wake-up delays, service contention and provider limits can pause a run. Applied details and remaining progress are saved in the browser, but temporary server jobs can be lost on restart; explicit Resume may be required and unfinished lookups can repeat. This is not unlimited or unattended background research. Ordinary recommendations continue to work with available records when enrichment is unavailable.
 
 ## Purpose and intended users
 
@@ -16,9 +60,7 @@ Discover supports readers who have accumulated a personal collection but need he
 
 ## Try the project
 
-Open the live website above and choose **Try a demonstration library**. It contains 116 entries representing 115 distinct stories. No installation, API key or sign-in is required to explore it. This is a demonstration collection, not a completely verified dataset. See [DEMO-GUIDE.md](DEMO-GUIDE.md) for the assessment walkthrough.
-
-Personal mode and `?demo=1` use separate library, preference, feedback and enrichment storage. Personal mode begins empty on first use and remembers subsequent additions. Demo mode loads the sample collection without replacing personal books. Libraries saved before this separation remain accessible using **Previous saved library** (`?mode=previous`); no old data is deleted. Published scripts and styles use content-based version URLs to prevent stale controls after updates.
+For a quick evaluation, use demonstration mode from the table above. The sample collection is not a completely verified dataset. No visitor API setup is needed for the deployed project; self-hosting the enrichment service requires private server configuration described in [RENDER-SETUP.md](RENDER-SETUP.md).
 
 ## Features and method
 
@@ -43,6 +85,8 @@ Codex assisted implementation, investigation, testing and visual production. Hum
 | `render.yaml` | Free Render service settings |
 | `RENDER-SETUP.md` | Private configuration and operating limits |
 | `connection-check.json` | Bounded live-connection check results |
+
+GitHub Pages serves the website and browser interactions. Render runs the separate metadata API at https://discover-metadata.onrender.com. Provider keys are private server settings, not website files. See [RENDER-SETUP.md](RENDER-SETUP.md) for configuration and operating limits.
 
 ## Run locally
 
@@ -73,7 +117,7 @@ On 1 November 2026, these JavaScript files passed 30 tests and the gateway passe
 
 ## Privacy, attribution and limits
 
-Library data and preferences stay in each visitor's browser. No keys, private CSV exports, credential stores, notes or browser backups are committed. Optional enrichment sends public title/author/ISBN and source descriptions to providers. Keys belong in private Render environment variables, never browser code or GitHub.
+Library data and preferences stay in each visitor's browser. No keys, private CSV exports, credential stores, notes or browser backups are committed. With automatic enrichment enabled, public title/author/ISBN and source descriptions can be sent to providers after imports and additions. Private reader notes and preference profiles are not sent for this extraction. Keys belong in private Render environment variables, never browser code or GitHub.
 
 The site is publicly accessible. Search indexing is discouraged but that is not access control. Anonymous enrichment shares limited quota. Free hosting can sleep; transient server jobs, cache and gateway counters can reset on restart. Applied browser data is retained, but an interrupted queue may require explicit Resume and in-flight work can repeat. Provider-side free-only configuration is required; gateway throttling is not a billing guarantee. Core discovery does not require an awake backend.
 
