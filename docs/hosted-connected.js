@@ -1,0 +1,1 @@
+document.getElementById('metadata-latest').hidden=true;
