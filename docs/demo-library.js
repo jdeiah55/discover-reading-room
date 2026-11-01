@@ -3,6 +3,7 @@
  const button=document.getElementById('try-demo-library');
  const panel=document.getElementById('demo-library-intro');
  const refresh=()=>{panel.hidden=PersonalLibrary.loaded;};
+ const demoLink=document.createElement('a');demoLink.href='?demo=1';demoLink.className='text-button';demoLink.textContent='Open the demonstration directly ↗';panel.append(demoLink);
  button.addEventListener('click',()=>{
   // A stale click must never replace an existing reader collection.
   if(PersonalLibrary.loaded)return;
@@ -14,4 +15,5 @@
   finally{button.disabled=false;refresh();}
  });
  window.addEventListener('personal-library-change',refresh);refresh();
+ window.addEventListener('DOMContentLoaded',()=>{if(new URLSearchParams(location.search).get('demo')==='1'&&!PersonalLibrary.loaded)button.click();},{once:true});
 })();

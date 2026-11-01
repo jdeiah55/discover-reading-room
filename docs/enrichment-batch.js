@@ -4,19 +4,23 @@
  box.innerHTML='<h3>A richer shelf, without the paperwork.</h3><p>Automatically add clearly supported details across your library. Uncertain suggestions stay aside; your own notes and reviewed data are kept.</p><label class="batch-ai-choice"><input type="checkbox" id="batch-use-ai" checked> Find more story details with AI</label><label class="batch-ai-choice"><input type="checkbox" id="batch-auto-new"> Keep new books updated after I add them</label><div class="batch-actions"><button type="button" id="enrich-library" class="gold-button">Automatically enrich my library ✧</button><button type="button" id="batch-pause" class="outline-button" hidden>Pause</button><button type="button" id="batch-resume" class="outline-button" hidden>Resume library queue</button><button type="button" id="batch-undo" class="text-button" hidden>Undo automatic labels from this run</button></div><p id="batch-status" role="status" aria-live="polite"></p><progress id="batch-progress" max="5" value="0" hidden aria-label="Library enrichment progress"></progress><label id="batch-history-label" hidden>Earlier results <select id="batch-history"></select></label><div id="batch-results"></div>';
  panel.querySelector('p').after(box);
  const $=id=>document.getElementById(id),KEY='discover-enrichment-batches-v1';
- let saved={job:null,done:[],autoDone:[],reviewed:[],history:[],processed:{},held:{},disabledRuns:[],itemKeys:{},identityVersion:2,autoNew:false,queue:null},job=null,poll=null,nextTimer=null,csrf='',busy=false,applying=false,advancing=false,notice='',ownsWriter=false,writerAttempt=null;
+ let saved={job:null,done:[],autoDone:[],reviewed:[],history:[],processed:{},held:{},disabledRuns:[],itemKeys:{},identityVersion:2,automationVersion:1,autoNew:true,queue:null},job=null,poll=null,nextTimer=null,csrf='',busy=false,applying=false,advancing=false,notice='',ownsWriter=false,writerAttempt=null,autoTimer=null;
  const identity=b=>BookCore.normalize(String(b.title).replace(/\s*\([^)]*(?:#\d|book\s*\d)[^)]*\)\s*$/i,''))+'|'+BookCore.normalize(b.author);
  const validID=s=>typeof s==='string'&&/^[a-f0-9]{32}$/.test(s);
  const strings=x=>Array.isArray(x)?x.filter(v=>typeof v==='string').slice(0,10000):[];
  try{
   const raw=JSON.parse(localStorage.getItem(KEY)||'null');if(raw){
-   saved.autoNew=raw.autoNew===true;saved.disabledRuns=strings(raw.disabledRuns).filter(validID);for(const k of ['done','autoDone','reviewed'])saved[k]=strings(raw[k]);saved.job=validID(raw.job)?raw.job:null;saved.history=strings(raw.history).filter(validID).slice(-1000);
+   saved.autoNew=raw.automationVersion===1?raw.autoNew!==false:true;saved.disabledRuns=strings(raw.disabledRuns).filter(validID);for(const k of ['done','autoDone','reviewed'])saved[k]=strings(raw[k]);saved.job=validID(raw.job)?raw.job:null;saved.history=strings(raw.history).filter(validID).slice(-1000);
    if(raw.processed&&typeof raw.processed==='object')for(const [id,list] of Object.entries(raw.processed))if(validID(id))saved.processed[id]=strings(list).slice(0,5);
    if(raw.held&&typeof raw.held==='object')for(const [key,n] of Object.entries(raw.held))if(Number.isInteger(n)&&n>=0&&n<=100)saved.held[key]=n;
    if(raw.itemKeys&&typeof raw.itemKeys==='object')for(const [id,keys] of Object.entries(raw.itemKeys))if(validID(id)&&keys&&typeof keys==='object')saved.itemKeys[id]=Object.fromEntries(Object.entries(keys).filter(([k,v])=>typeof v==='string'&&k.length<1000&&v.length<1000).slice(0,5));if(raw.identityVersion!==2&&saved.job)delete saved.processed[saved.job];
    const q=raw.queue;if(q&&validID(q.id)&&Array.isArray(q.remaining)&&Number.isInteger(q.total)&&q.total>=0&&q.total<=10000)saved.queue={id:q.id,remaining:strings(q.remaining),total:q.total,skipped:Number.isInteger(q.skipped)?q.skipped:0,currentJob:validID(q.currentJob)?q.currentJob:null,paused:true,large:q.large===true,useAI:q.useAI!==false};
   }
  }catch{}
+ const automaticToggle=$('batch-auto-new');automaticToggle.parentElement.lastChild.textContent=' Automatically enrich imported and newly added books';
+ const privacy=document.createElement('p');privacy.className='small-muted';privacy.textContent='Book titles and authors are looked up online automatically. Pause here or turn this off at any time; your notes and preferences stay in this browser.';automaticToggle.parentElement.after(privacy);
+ const summary=document.createElement('p');summary.id='auto-enrichment-status';summary.className='small-muted';summary.setAttribute('role','status');$('import-status').after(summary);
+ new MutationObserver(()=>{summary.textContent=$('batch-status').textContent;}).observe($('batch-status'),{childList:true,subtree:true,characterData:true});
  async function ensureWriter(){
   if(ownsWriter)return true;if(writerAttempt)return writerAttempt;if(!navigator.locks){ownsWriter=true;return true;}
   writerAttempt=new Promise(resolve=>{navigator.locks.request('discover-automatic-metadata-writer',{ifAvailable:true},async lock=>{if(!lock){resolve(false);return;}ownsWriter=true;resolve(true);await new Promise(()=>{});}).catch(()=>resolve(false));}).finally(()=>{writerAttempt=null;});return writerAttempt;
@@ -37,6 +41,7 @@
   const active=job&&['running','pausing'].includes(job.state),q=saved.queue,pending=q?.remaining.length>0,hasNew=PersonalLibrary.books.some(eligible);
   $('enrich-library').disabled=busy||advancing||active||Boolean(saved.job&&!job)||!PersonalLibrary.loaded||Boolean(pending)||!hasNew;
   $('enrich-library').textContent=q&&!pending?(hasNew?'Update book details ✧':'Library checked ✓'):'Automatically enrich my library ✧';
+  $('enrich-library').hidden=saved.autoNew;
   $('batch-pause').hidden=!active&&!(pending&&!q.paused);$('batch-pause').disabled=busy||job?.state==='pausing';
   $('batch-resume').hidden=!(pending&&q.paused)&&job?.state!=='paused';$('batch-resume').disabled=busy||advancing;
   $('batch-undo').hidden=!job?.automatic||!hasAutomatic(job.assignment||job.id);$('batch-undo').disabled=busy||advancing;
@@ -128,8 +133,27 @@
  $('batch-pause').onclick=()=>control('pause');$('batch-resume').onclick=()=>control('resume');$('batch-undo').onclick=()=>undoLabels(job.assignment||job.id);
  $('batch-history').onchange=async e=>{clearTimeout(poll);clearTimeout(nextTimer);saved.job=e.target.value;persist();await refresh();};
  window.addEventListener('metadata-reviewed',()=>{if(!applying)render();});
- $('batch-auto-new').checked=saved.autoNew;$('batch-auto-new').onchange=()=>{saved.autoNew=$('batch-auto-new').checked;persist();};
- window.addEventListener('personal-library-change',()=>{if(applying)return;buttons();if(saved.autoNew&&PersonalLibrary.change==='merge'&&!busy&&!advancing&&!saved.queue?.remaining.length&&!['running','pausing','paused'].includes(job?.state)&&PersonalLibrary.books.some(eligible))setTimeout(()=>$('enrich-library').click(),100);if(job)render();if(!PersonalLibrary.loaded&&saved.queue?.remaining.length)control('pause');});
+ function queueAutomatic(){
+  clearTimeout(autoTimer);if(!saved.autoNew||!PersonalLibrary.loaded)return;
+  autoTimer=setTimeout(async()=>{
+   if(!saved.autoNew||!PersonalLibrary.loaded)return;
+   if(busy||advancing||applying){queueAutomatic();return;}
+   const pending=PersonalLibrary.books.filter(eligible),q=saved.queue;
+   if(q?.remaining.length||job&&['running','pausing','paused'].includes(job.state)){
+    if(q){const known=new Set(q.remaining);for(const b of pending){const key=identity(b);if(!known.has(key)){q.remaining.push(key);known.add(key);q.total++;}}persist();render();}return;
+   }
+   if(!pending.length)return;
+   // Do not silently restart a queue the reader explicitly paused or undid.
+   if(q?.paused||saved.disabledRuns.includes(q?.id))return;
+   $('enrich-library').onclick();
+  },400);
+ }
+ $('batch-auto-new').checked=saved.autoNew;$('batch-auto-new').onchange=()=>{saved.autoNew=$('batch-auto-new').checked;persist();if(saved.autoNew)queueAutomatic();else{clearTimeout(autoTimer);if(saved.queue?.remaining.length)control('pause');}buttons();};
+ window.addEventListener('personal-library-change',()=>{if(applying)return;
+  if(!PersonalLibrary.loaded){clearTimeout(autoTimer);if(saved.queue?.remaining.length)control('pause');buttons();return;}
+  if(!['automatic','remove'].includes(PersonalLibrary.change))queueAutomatic();
+  buttons();if(job)render();
+ });
  panel.addEventListener('toggle',()=>{if(panel.open&&saved.job&&!job)refresh();});
- buttons();
+ buttons();if(saved.job)refresh();else queueAutomatic();
 })();

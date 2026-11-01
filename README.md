@@ -20,12 +20,12 @@ Open the live website above and choose **Try a demonstration library**. It conta
 
 ## Features and method
 
-- Import a title/author CSV, merge additional books, add a title and remove entries.
+- Import CSV, TSV or plain-text book lists, merge additional books, add a title and remove entries. TXT uses one `Title — Author`, `Title | Author` or `Title by Author` per line; TSV supports Title/Author columns and optional labels.
 - Describe a reading intention or choose structured genres, moods, atmospheres, tropes, character dynamics, authors, relationships, structure and length.
 - Inspect complete matches or qualified partial alternatives, separating supported conditions from unresolved information.
 - Tune preferences, save books and give feedback. Feedback changes taste influence, corrections change book information, and title exclusion changes recommendation eligibility without deleting the book.
 - Explore the collection, view available series information, draw a random eligible book and export/restore browser-data backups.
-- Optionally enrich records through source lookup and screened AI suggestions.
+- Enrich imported/new books automatically through source lookup and screened AI suggestions. Pause, resume, opt out or undo assignments in library settings. Books added during a run join its queue; existing notes and corrections are preserved.
 
 The browser combines imported identities, bundled source information, reader contributions and optional enrichment. Explicit rules determine eligibility, matching and ranking; a live model does not select the recommendations. Complete matches take priority. Qualified partial alternatives preserve hard restrictions. Personalization influences ordering without supplying missing book facts or overriding eligibility.
 
@@ -57,7 +57,7 @@ Open http://localhost:8765/. Core discovery needs no keys or build step. The hos
 With a current Node.js installation, run from the repository root:
 
 ```sh
-node --test tests/story-interpreter.test.js tests/library-metadata.test.js
+node --test tests/story-interpreter.test.js tests/library-metadata.test.js tests/library-import.test.js
 ```
 
 For the gateway, with Python 3:
@@ -67,7 +67,7 @@ cd service
 python -m unittest test_gateway -v
 ```
 
-On 1 November 2026, these JavaScript files passed 24 tests and the gateway passed five tests. They use fixtures/fake providers and require no API keys. Separate live checks are recorded in `connection-check.json`. These checks do not establish overall metadata accuracy or reader satisfaction.
+On 1 November 2026, these JavaScript files passed 30 tests and the gateway passed five tests. Isolated browser checks with fake provider responses also covered automatic import/addition, active-queue additions, duplicate avoidance, opt-out persistence and fresh/demo entry. They require no API keys. Separate live checks are recorded in `connection-check.json`. These checks do not establish overall metadata accuracy or reader satisfaction.
 
 ## Privacy, attribution and limits
 

@@ -1,0 +1,7 @@
+const test=require('node:test'),assert=require('node:assert/strict'),I=require('../docs/library-import.js');
+test('CSV remains unchanged, including quoted commas and optional metadata',()=>{const csv='Title,Author,Moods\n"A, Book",Writer,Cozy';assert.equal(I.convert(csv,'books.csv'),csv);});
+test('TSV handles quoted tabs and optional columns',()=>{assert.equal(I.convert('Title\tAuthor\tMoods\n"A\tBook"\tWriter\tCozy','books.tsv'),'"Title","Author","Moods"\n"A\tBook","Writer","Cozy"');});
+test('headerless TSV receives identity headers',()=>{assert.equal(I.convert('Book\tWriter','books.tsv'),'"Title","Author"\n"Book","Writer"');});
+test('plain text supports explicit title-author separators without guessing hyphens',()=>{const result=I.convert('The Night Circus — Erin Morgenstern\nPride and Prejudice by Jane Austen\nA, Book | A. Writer','books.txt');assert.match(result,/"The Night Circus","Erin Morgenstern"/);assert.match(result,/"A, Book","A. Writer"/);assert.throws(()=>I.convert('Book - Writer','books.txt'),/Line 1/);});
+test('invalid formats and incomplete rows fail without producing imports',()=>{assert.throws(()=>I.convert('Book','books.pdf'),/CSV, TSV or TXT/);assert.throws(()=>I.convert('Book\tWriter\nIncomplete','books.tsv'),/same number/);assert.throws(()=>I.convert('Book — ','books.txt'),/Line 1/);});
+test('unfinished quotes and empty text are explicit errors',()=>{assert.throws(()=>I.convert('"Book\tWriter','books.tsv'),/unfinished/);assert.throws(()=>I.convert('\n','books.txt'),/empty/);});
