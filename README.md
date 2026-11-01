@@ -2,25 +2,22 @@
 
 Discover helps readers choose what to read next from their own book collection. Import a list, describe the experience you want or select filters, then inspect the information supporting each suggestion.
 
-**No installation or sign-in is required to use the hosted website. It remains available when the developer's laptop is off.**
+**Use Discover directly in your browser, without installation or sign-in.**
 
 ## Open the website
 
-| Version | Link | What opens |
+| Mode | Link | What opens |
 |---|---|---|
 | **Personal mode** | [Start your own library](https://jdeiah55.github.io/discover-reading-room/?v=20261101-modes) | An empty personal space on first use; your additions are remembered afterward. |
 | **Demonstration mode** | [Explore the sample collection](https://jdeiah55.github.io/discover-reading-room/?demo=1&v=20261101-modes) | A separate collection of 116 entries representing 115 distinct stories. Suitable for assessment without preparing an import. |
-| **Earlier saved library** | [Recover the previous library space](https://jdeiah55.github.io/discover-reading-room/?mode=previous&v=20261101-modes) | Data saved in this browser before personal and demo modes were separated, if present. |
 
-Personal and demonstration modes have separate libraries, preferences, feedback, saved books and enrichment progress. Switching modes does not replace the other collection. Earlier saved data has not been deleted. These spaces are local to each browser; they are not accounts synchronized between devices.
+Personal and demonstration modes have separate libraries, preferences, feedback, saved books and enrichment progress. Switching modes does not replace the other collection. These spaces are local to each browser; they are not accounts synchronized between devices.
 
-The version parameter refreshes older cached pages. Scripts and styles also use content-based version URLs so current controls load after updates.
-
-## How to use the updated website
+## How to use Discover
 
 1. **Choose your starting point.** Open personal mode to bring your own collection, or demonstration mode to explore the supplied sample.
 2. **Add books.** Upload a CSV, TSV or TXT list, or use **Add one book**. **Add another book list** merges additions without replacing existing entries. Replacing the entire collection is a separate confirmed action.
-3. **Let details update automatically.** Enrichment starts after an import or addition; there is no start-button step in the default workflow. Books added during an active run join its queue. You can use the available library information while processing continues.
+3. **Let details enrich automatically.** Enrichment starts after an import or addition. Books added during an active run join its queue. You can use the available library information while processing continues.
 4. **Express what you want.** Use **Describe the feeling** for a recognized descriptive request, or **Curate my read** for explicit filter selections. Available filter choices reflect the current library's information.
 5. **Inspect the suggestions.** Open a book's matching details to distinguish supported conditions from unresolved information. When no complete match is established, qualified partial alternatives may appear.
 6. **Refine and preserve your experience.** Save titles, tune your taste, correct book details, give feedback or exclude a title from recommendations. Export a complete backup to move or preserve your browser data.
@@ -96,7 +93,7 @@ With Python 3 installed, run from this repository's root:
 python -m http.server 8765 --directory docs
 ```
 
-Open http://localhost:8765/. Core discovery needs no keys or build step. The hosted backend accepts browser requests from the deployed GitHub origin, so local enrichment requires a separately configured backend. Storage is separate per address; use a complete backup to move collections. `prepare.py` is a packaging helper for the original workspace, not a requirement for running this clone.
+Open http://localhost:8765/. Core discovery needs no keys or build step. The hosted backend accepts browser requests from the deployed GitHub origin, so local enrichment requires a separately configured backend. Storage is separate per address; use a complete backup to move collections. The website can be run directly from `docs/` without a packaging step.
 
 ## Reproduce focused checks
 
@@ -121,7 +118,7 @@ Library data and preferences stay in each visitor's browser. No keys, private CS
 
 The site is publicly accessible. Search indexing is discouraged but that is not access control. Anonymous enrichment shares limited quota. Free hosting can sleep; transient server jobs, cache and gateway counters can reset on restart. Applied browser data is retained, but an interrupted queue may require explicit Resume and in-flight work can repeat. Provider-side free-only configuration is required; gateway throttling is not a billing guarantee. Core discovery does not require an awake backend.
 
-Book records retain source references. Visual jackets are AI-generated concept artwork, not official publisher covers. No full book PDFs or reading engine are included. Report and presentation are submitted separately; outdated drafts are not bundled here.
+Book records retain source references. Visual jackets are AI-generated concept artwork, not official publisher covers. No full book PDFs or reading engine are included. The report and presentation are submitted separately.
 
 ## Next steps
 
