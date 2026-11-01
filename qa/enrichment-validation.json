@@ -1,0 +1,79 @@
+{
+  "checked": "2026-10-31T13:21:17.519231+00:00",
+  "scope": "Optional automatic owned-library metadata enrichment; actual reader browser unchanged.",
+  "pythonChecks": {
+    "bookAPIs": 6,
+    "enrichmentJobs": 9,
+    "localServer": 5
+  },
+  "browserChecks": {
+    "batchFlow": "Passed: five-book selection, title/author-only payload, pause/reload/resume, reviews, relationship mapping, duplicate detection, next batch, ownership, mobile.",
+    "metadataApproval": "Passed: source identity/quote validation, additive approval, filters, persistence, backup and removal.",
+    "libraryFirst": "12 groups passed",
+    "readingTools": "9 groups passed"
+  },
+  "liveTest": {
+    "book": "Kiss the Villain",
+    "author": "Rina Kent",
+    "state": "complete",
+    "providers": [
+      "Open Library",
+      "Google Books"
+    ],
+    "geminiSuggestions": 8,
+    "appliedToActualReader": false
+  },
+  "limits": [
+    "Automatic classifications are source-linked machine assignments, not independently verified facts.",
+    "Unknowns and complex/mood/series/edition/connected-plot details are not inferred.",
+    "Up to 12 screened labels per book in this pass.",
+    "Large queues use Google Books/Gemini and cached Open Library data, not bulk individual Open Library lookups.",
+    "Free quotas and browser storage may pause work; keep the page open and resume after restart."
+  ],
+  "fullReleaseSuites": 23,
+  "fullReleasePassed": true,
+  "mode": "Automatic classification and resumable whole-library queue in five-book chunks",
+  "automaticTests": {
+    "queue": "Seven synthetic books, two automatic chunks, explicit resume after reload, no per-book approvals, source controls, conflict/negation/uncertainty rejection, draft preservation, run undo, persistent suppression, two-tab writer exclusion. Passed.",
+    "storage": "1,300 synthetic books with 15,600 labels; compact save/validate/reload/full backup restore. Passed.",
+    "storedCharacters": 2133708,
+    "expandedCharacters": 4217098
+  },
+  "liveAutomaticTest": {
+    "book": "Kiss the Villain",
+    "author": "Rina Kent",
+    "completed": true,
+    "automaticLabelsAdded": 1,
+    "otherSuggestionsHeld": 6,
+    "actualReaderChanged": false
+  },
+  "aliasRecovery": {
+    "case": "Fire and Ash display title versus Fire and Ash: A Student/Teacher MM Romance (Spitfire) raw edition title",
+    "legacyQueue": "115/116 repaired to116/116 in isolated browser",
+    "newRequests": 0,
+    "duplicateRunRequests": "idempotent server response",
+    "readerStorageChangedByAssistant": false
+  },
+  "book_details_2026_10_31": {
+    "status": "passed focused checks and all 23 release suites",
+    "features": [
+      "mood and atmosphere impressions",
+      "persistent additive/removal corrections",
+      "selected source conflicts",
+      "source numbered series positions",
+      "short catalog excerpts",
+      "opt-in new-book updates"
+    ],
+    "checks": [
+      "book-details.cjs",
+      "enrichment-batch.cjs including new book auto lookup",
+      "enrichment-alias.cjs",
+      "story-structure.cjs",
+      "series-library.cjs",
+      "automatic-storage.cjs: 1300 books, 15600 labels, rich details, reload and full restore"
+    ],
+    "storage_characters": 2455378,
+    "real_user_storage_changed": false,
+    "live_provider_requests_this_pass": 0
+  }
+}

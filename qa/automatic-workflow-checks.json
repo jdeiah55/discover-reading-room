@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-01",
+  "type": "Retained summary of isolated browser checks",
+  "environment": "Chrome automated through Playwright on Windows",
+  "providerMode": "Controlled responses; no live provider calls for these scenarios",
+  "checks": {
+    "emptyPersonalSpaceOnFirstUse": "passed",
+    "textImportStartsEnrichmentWithoutStartButton": "passed",
+    "additionDuringActiveRunEntersQueue": "passed",
+    "duplicateImportDoesNotRepeatCompletedLookups": "passed",
+    "automationOptOutPersistsAfterRefresh": "passed",
+    "personalAndDemoStorageSeparatedWithinOneBrowser": "passed",
+    "previousSavedLibraryPreserved": "passed",
+    "demonstrationEntryCount": 116,
+    "observedJavaScriptErrors": 0
+  },
+  "scope": "Selected workflow and storage checks on local preview and the hosted site. Not a full regression rerun, provider reliability study, classification accuracy estimate or reader evaluation.",
+  "reproductionLimit": "This is a results summary; the browser automation harness is retained in the development workspace rather than bundled here. Included Node and Python focused tests can be rerun using the root README."
+}
