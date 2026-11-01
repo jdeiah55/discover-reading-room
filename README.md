@@ -18,6 +18,8 @@ Discover supports readers who have accumulated a personal collection but need he
 
 Open the live website above and choose **Try a demonstration library**. It contains 116 entries representing 115 distinct stories. No installation, API key or sign-in is required to explore it. This is a demonstration collection, not a completely verified dataset. See [DEMO-GUIDE.md](DEMO-GUIDE.md) for the assessment walkthrough.
 
+Personal mode and `?demo=1` use separate library, preference, feedback and enrichment storage. Personal mode begins empty on first use and remembers subsequent additions. Demo mode loads the sample collection without replacing personal books. Libraries saved before this separation remain accessible using **Previous saved library** (`?mode=previous`); no old data is deleted. Published scripts and styles use content-based version URLs to prevent stale controls after updates.
+
 ## Features and method
 
 - Import CSV, TSV or plain-text book lists, merge additional books, add a title and remove entries. TXT uses one `Title — Author`, `Title | Author` or `Title by Author` per line; TSV supports Title/Author columns and optional labels.

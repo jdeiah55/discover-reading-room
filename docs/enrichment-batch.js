@@ -9,7 +9,7 @@
  const validID=s=>typeof s==='string'&&/^[a-f0-9]{32}$/.test(s);
  const strings=x=>Array.isArray(x)?x.filter(v=>typeof v==='string').slice(0,10000):[];
  try{
-  const raw=JSON.parse(localStorage.getItem(KEY)||'null');if(raw){
+  const raw=JSON.parse((window.DiscoverStorage||localStorage).getItem(KEY)||'null');if(raw){
    saved.autoNew=raw.automationVersion===1?raw.autoNew!==false:true;saved.disabledRuns=strings(raw.disabledRuns).filter(validID);for(const k of ['done','autoDone','reviewed'])saved[k]=strings(raw[k]);saved.job=validID(raw.job)?raw.job:null;saved.history=strings(raw.history).filter(validID).slice(-1000);
    if(raw.processed&&typeof raw.processed==='object')for(const [id,list] of Object.entries(raw.processed))if(validID(id))saved.processed[id]=strings(list).slice(0,5);
    if(raw.held&&typeof raw.held==='object')for(const [key,n] of Object.entries(raw.held))if(Number.isInteger(n)&&n>=0&&n<=100)saved.held[key]=n;
@@ -23,9 +23,9 @@
  new MutationObserver(()=>{summary.textContent=$('batch-status').textContent;}).observe($('batch-status'),{childList:true,subtree:true,characterData:true});
  async function ensureWriter(){
   if(ownsWriter)return true;if(writerAttempt)return writerAttempt;if(!navigator.locks){ownsWriter=true;return true;}
-  writerAttempt=new Promise(resolve=>{navigator.locks.request('discover-automatic-metadata-writer',{ifAvailable:true},async lock=>{if(!lock){resolve(false);return;}ownsWriter=true;resolve(true);await new Promise(()=>{});}).catch(()=>resolve(false));}).finally(()=>{writerAttempt=null;});return writerAttempt;
+  writerAttempt=new Promise(resolve=>{navigator.locks.request('discover-automatic-metadata-writer'+(window.DiscoverStorage?.scope||''),{ifAvailable:true},async lock=>{if(!lock){resolve(false);return;}ownsWriter=true;resolve(true);await new Promise(()=>{});}).catch(()=>resolve(false));}).finally(()=>{writerAttempt=null;});return writerAttempt;
  }
- const persist=()=>{if(job?.automatic&&!ownsWriter)return true;try{localStorage.setItem(KEY,JSON.stringify(saved));return true;}catch{return false;}};
+ const persist=()=>{if(job?.automatic&&!ownsWriter)return true;try{(window.DiscoverStorage||localStorage).setItem(KEY,JSON.stringify(saved));return true;}catch{return false;}};
  async function request(path,data){
   if(!/^https?:$/.test(location.protocol))throw Error('Start Discover locally to enrich your shelf. Saved recommendations still work offline.');
   const response=await fetch('/api/enrichment/'+path,{method:data?'POST':'GET',headers:data?{'Content-Type':'application/json','X-Discover-Token':csrf}:{},body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(15000)});
@@ -96,7 +96,7 @@
   if(advancing||!saved.queue||saved.queue.paused)return;advancing=true;buttons();
   const start=async()=>{if(!await ensureWriter())throw Error('Another Discover tab is managing this queue. Close that tab before continuing here.');
    // Web Locks serializes queue advancement across tabs on localhost.
-   try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');if(raw?.queue?.id===saved.queue.id&&raw.queue.currentJob!==saved.queue.currentJob){saved.queue=raw.queue;saved.job=raw.job;await refresh();return;}}catch{}
+   try{const raw=JSON.parse((window.DiscoverStorage||localStorage).getItem(KEY)||'null');if(raw?.queue?.id===saved.queue.id&&raw.queue.currentJob!==saved.queue.currentJob){saved.queue=raw.queue;saved.job=raw.job;await refresh();return;}}catch{}
    const q=saved.queue,owned=new Map(PersonalLibrary.books.map(b=>[identity(b),b]));const valid=q.remaining.filter(key=>owned.has(key));q.skipped+=q.remaining.length-valid.length;q.remaining=valid;
    if(!q.remaining.length){persist();render();return;}
    const books=q.remaining.slice(0,5).map(key=>owned.get(key));
@@ -104,7 +104,7 @@
    await configure(q.useAI);job=await request('jobs',{books:books.map(b=>({title:b.rawTitle||b.title,author:b.author})),useAI:q.useAI,automatic:true,cachedOpenLibrary:q.large,assignment:q.id});
    if(job.automatic!==true)throw Error('Restart Discover to enable automatic assignments before continuing.');saved.itemKeys[job.id]=Object.fromEntries(books.map(b=>[identity({title:b.rawTitle||b.title,author:b.author}),identity(b)]));saved.job=job.id;q.currentJob=job.id;persist();notice='';render();schedule();
   };
-  try{if(navigator.locks)await navigator.locks.request('discover-enrichment-queue',start);else await start();}
+  try{if(navigator.locks)await navigator.locks.request('discover-enrichment-queue'+(window.DiscoverStorage?.scope||''),start);else await start();}
   catch(e){if(saved.queue)saved.queue.paused=true;persist();notice=e.message;$('batch-status').textContent=notice;}
   finally{advancing=false;buttons();}
  }

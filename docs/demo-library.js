@@ -5,6 +5,7 @@
  const refresh=()=>{panel.hidden=PersonalLibrary.loaded;};
  const demoLink=document.createElement('a');demoLink.href='?demo=1';demoLink.className='text-button';demoLink.textContent='Open the demonstration directly ↗';panel.append(demoLink);
  button.addEventListener('click',()=>{
+  if(window.DiscoverStorage&&DiscoverStorage.mode!=='demo'){const u=new URL(location.href);u.searchParams.delete('mode');u.searchParams.set('demo','1');u.hash='';location.assign(u.href);return;}
   // A stale click must never replace an existing reader collection.
   if(PersonalLibrary.loaded)return;
   button.disabled=true;

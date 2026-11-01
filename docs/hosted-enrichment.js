@@ -4,12 +4,12 @@
  box.innerHTML='<h3>A richer shelf, without the paperwork.</h3><p>Automatically add clearly supported details across your library. Uncertain suggestions stay aside; your own notes and reviewed data are kept.</p><label class="batch-ai-choice"><input type="checkbox" id="batch-use-ai" checked> Find more story details with AI</label><label class="batch-ai-choice"><input type="checkbox" id="batch-auto-new"> Keep new books updated after I add them</label><div class="batch-actions"><button type="button" id="enrich-library" class="gold-button">Automatically enrich my library ✧</button><button type="button" id="batch-pause" class="outline-button" hidden>Pause</button><button type="button" id="batch-resume" class="outline-button" hidden>Resume library queue</button><button type="button" id="batch-undo" class="text-button" hidden>Undo automatic labels from this run</button></div><p id="batch-status" role="status" aria-live="polite"></p><progress id="batch-progress" max="5" value="0" hidden aria-label="Library enrichment progress"></progress><label id="batch-history-label" hidden>Earlier results <select id="batch-history"></select></label><div id="batch-results"></div>';
  panel.querySelector('p').after(box);
  const $=id=>document.getElementById(id),KEY='discover-enrichment-batches-v1';
- let saved={job:null,done:[],autoDone:[],reviewed:[],history:[],processed:{},held:{},disabledRuns:[],itemKeys:{},identityVersion:2,automationVersion:1,autoNew:true,queue:null},job=null,poll=null,nextTimer=null,csrf=localStorage.getItem('discover-hosted-token:'+window.DiscoverMetadataOrigin)||'',busy=false,applying=false,advancing=false,notice='',ownsWriter=false,writerAttempt=null,autoTimer=null;
+ let saved={job:null,done:[],autoDone:[],reviewed:[],history:[],processed:{},held:{},disabledRuns:[],itemKeys:{},identityVersion:2,automationVersion:1,autoNew:true,queue:null},job=null,poll=null,nextTimer=null,csrf=(window.DiscoverStorage||localStorage).getItem('discover-hosted-token:'+window.DiscoverMetadataOrigin)||'',busy=false,applying=false,advancing=false,notice='',ownsWriter=false,writerAttempt=null,autoTimer=null;
  const identity=b=>BookCore.normalize(String(b.title).replace(/\s*\([^)]*(?:#\d|book\s*\d)[^)]*\)\s*$/i,''))+'|'+BookCore.normalize(b.author);
  const validID=s=>typeof s==='string'&&/^[a-f0-9]{32}$/.test(s);
  const strings=x=>Array.isArray(x)?x.filter(v=>typeof v==='string').slice(0,10000):[];
  try{
-  const raw=JSON.parse(localStorage.getItem(KEY)||'null');if(raw){
+  const raw=JSON.parse((window.DiscoverStorage||localStorage).getItem(KEY)||'null');if(raw){
    saved.autoNew=raw.automationVersion===1?raw.autoNew!==false:true;saved.disabledRuns=strings(raw.disabledRuns).filter(validID);for(const k of ['done','autoDone','reviewed'])saved[k]=strings(raw[k]);saved.job=validID(raw.job)?raw.job:null;saved.history=strings(raw.history).filter(validID).slice(-1000);
    if(raw.processed&&typeof raw.processed==='object')for(const [id,list] of Object.entries(raw.processed))if(validID(id))saved.processed[id]=strings(list).slice(0,5);
    if(raw.held&&typeof raw.held==='object')for(const [key,n] of Object.entries(raw.held))if(Number.isInteger(n)&&n>=0&&n<=100)saved.held[key]=n;
@@ -23,16 +23,16 @@
  new MutationObserver(()=>{summary.textContent=$('batch-status').textContent;}).observe($('batch-status'),{childList:true,subtree:true,characterData:true});
  async function ensureWriter(){
   if(ownsWriter)return true;if(writerAttempt)return writerAttempt;if(!navigator.locks){ownsWriter=true;return true;}
-  writerAttempt=new Promise(resolve=>{navigator.locks.request('discover-automatic-metadata-writer',{ifAvailable:true},async lock=>{if(!lock){resolve(false);return;}ownsWriter=true;resolve(true);await new Promise(()=>{});}).catch(()=>resolve(false));}).finally(()=>{writerAttempt=null;});return writerAttempt;
+  writerAttempt=new Promise(resolve=>{navigator.locks.request('discover-automatic-metadata-writer'+(window.DiscoverStorage?.scope||''),{ifAvailable:true},async lock=>{if(!lock){resolve(false);return;}ownsWriter=true;resolve(true);await new Promise(()=>{});}).catch(()=>resolve(false));}).finally(()=>{writerAttempt=null;});return writerAttempt;
  }
- const persist=()=>{if(job?.automatic&&!ownsWriter)return true;try{localStorage.setItem(KEY,JSON.stringify(saved));return true;}catch{return false;}};
+ const persist=()=>{if(job?.automatic&&!ownsWriter)return true;try{(window.DiscoverStorage||localStorage).setItem(KEY,JSON.stringify(saved));return true;}catch{return false;}};
  async function request(path,data){
   if(!/^https?:$/.test(location.protocol))throw Error('Start Discover locally to enrich your shelf. Saved recommendations still work offline.');
   const response=await fetch(window.DiscoverMetadataOrigin+'/api/enrichment/'+path,{method:data?'POST':'GET',headers:{...(data?{'Content-Type':'application/json'}:{}),'X-Discover-Token':csrf},body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(path==='config'?120000:20000)});
   let result;try{result=await response.json();}catch{throw Error('Restart Discover to enable automatic enrichment.');}
   if(!response.ok)throw Error(response.status===403?'Batch not found. Reconnect and resume your saved queue.':result.error||'The queue could not be opened.');return result;
  }
- async function configure(useAI){const config=await request('config');csrf=config.csrf;localStorage.setItem('discover-hosted-token:'+window.DiscoverMetadataOrigin,csrf);if(!config.googleBooks)throw Error('Save your Google Books key using API setup first.');if(useAI&&!config.gemini)throw Error('Save your Gemini key and model, or turn off AI extraction.');}
+ async function configure(useAI){const config=await request('config');csrf=config.csrf;(window.DiscoverStorage||localStorage).setItem('discover-hosted-token:'+window.DiscoverMetadataOrigin,csrf);if(!config.googleBooks)throw Error('Save your Google Books key using API setup first.');if(useAI&&!config.gemini)throw Error('Save your Gemini key and model, or turn off AI extraction.');}
  const findBook=item=>PersonalLibrary.books.find(b=>[b.title,b.rawTitle,PersonalLibrary.entry(b.id)?.title,...(b.aliases||[])].filter(Boolean).some(title=>identity({title,author:b.author})===identity(item)));
  const itemKey=item=>saved.itemKeys[job?.id]?.[identity(item)]||(findBook(item)?identity(findBook(item)):identity(item));
  function hasAutomatic(assignment,id=null){return PersonalLibrary.books.some(b=>(!id||b.id===id)&&(b.automaticMetadata||[]).some(c=>c.assignment===assignment));}
@@ -91,12 +91,12 @@
  }
  async function undoLabels(assignment,id=null){if(!await ensureWriter()){notice='Another Discover tab is managing these labels. Close that tab before changing them here.';render();return;}if(!id&&saved.queue?.id===assignment){saved.queue.paused=true;if(!saved.disabledRuns.includes(assignment))saved.disabledRuns.push(assignment);persist();await control('pause');}applying=true;try{const result=PersonalLibrary.undoAutomatic(assignment,id);notice=result.persistent?'Automatic labels removed. Your notes and reviewed classifications are kept.':'Removed for this visit only; save a backup before closing this page.';}finally{applying=false;}render();}
  function schedule(){clearTimeout(poll);clearTimeout(nextTimer);if(job&&['running','pausing'].includes(job.state))poll=setTimeout(refresh,1800);else if(job?.state==='complete'&&saved.queue&&!saved.queue.paused&&saved.queue.remaining.length&&job.id===saved.queue.currentJob)nextTimer=setTimeout(nextChunk,800);else if(saved.autoNew&&job?.state==='complete'&&!saved.queue?.remaining.length&&PersonalLibrary.books.some(eligible))nextTimer=setTimeout(()=>$('enrich-library').click(),800);}
- async function refresh(){try{job=await request('jobs/'+saved.job);notice='';if(job.automatic&&!await ensureWriter())notice='Another Discover tab is managing these automatic labels. Close that tab before resuming here.';render();schedule();}catch(e){if(/Batch not found/.test(e.message)){saved.job=null;job=null;csrf='';localStorage.removeItem('discover-hosted-token:'+window.DiscoverMetadataOrigin);if(saved.queue){saved.queue.currentJob=null;saved.queue.paused=true;}persist();}notice=e.message+' Resume to reconnect; applied labels are kept.';$('batch-status').textContent=notice;buttons();}}
+ async function refresh(){try{job=await request('jobs/'+saved.job);notice='';if(job.automatic&&!await ensureWriter())notice='Another Discover tab is managing these automatic labels. Close that tab before resuming here.';render();schedule();}catch(e){if(/Batch not found/.test(e.message)){saved.job=null;job=null;csrf='';(window.DiscoverStorage||localStorage).removeItem('discover-hosted-token:'+window.DiscoverMetadataOrigin);if(saved.queue){saved.queue.currentJob=null;saved.queue.paused=true;}persist();}notice=e.message+' Resume to reconnect; applied labels are kept.';$('batch-status').textContent=notice;buttons();}}
  async function nextChunk(){
   if(advancing||!saved.queue||saved.queue.paused)return;advancing=true;buttons();
   const start=async()=>{if(!await ensureWriter())throw Error('Another Discover tab is managing this queue. Close that tab before continuing here.');
    // Web Locks serializes queue advancement across tabs on localhost.
-   try{const raw=JSON.parse(localStorage.getItem(KEY)||'null');if(raw?.queue?.id===saved.queue.id&&raw.queue.currentJob!==saved.queue.currentJob){saved.queue=raw.queue;saved.job=raw.job;await refresh();return;}}catch{}
+   try{const raw=JSON.parse((window.DiscoverStorage||localStorage).getItem(KEY)||'null');if(raw?.queue?.id===saved.queue.id&&raw.queue.currentJob!==saved.queue.currentJob){saved.queue=raw.queue;saved.job=raw.job;await refresh();return;}}catch{}
    const q=saved.queue,owned=new Map(PersonalLibrary.books.map(b=>[identity(b),b]));const valid=q.remaining.filter(key=>owned.has(key));q.skipped+=q.remaining.length-valid.length;q.remaining=valid;
    if(!q.remaining.length){persist();render();return;}
    const books=q.remaining.slice(0,5).map(key=>owned.get(key));
@@ -104,7 +104,7 @@
    await configure(q.useAI);job=await request('jobs',{books:books.map(b=>({title:b.rawTitle||b.title,author:b.author})),useAI:q.useAI,automatic:true,cachedOpenLibrary:q.large,assignment:q.id});
    if(job.automatic!==true)throw Error('Restart Discover to enable automatic assignments before continuing.');saved.itemKeys[job.id]=Object.fromEntries(books.map(b=>[identity({title:b.rawTitle||b.title,author:b.author}),identity(b)]));saved.job=job.id;q.currentJob=job.id;persist();notice='';render();schedule();
   };
-  try{if(navigator.locks)await navigator.locks.request('discover-enrichment-queue',start);else await start();}
+  try{if(navigator.locks)await navigator.locks.request('discover-enrichment-queue'+(window.DiscoverStorage?.scope||''),start);else await start();}
   catch(e){if(saved.queue)saved.queue.paused=true;persist();notice=e.message;$('batch-status').textContent=notice;}
   finally{advancing=false;buttons();}
  }

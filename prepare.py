@@ -2,6 +2,8 @@ from pathlib import Path
 import shutil
 import json
 import os
+import re
+import hashlib
 from urllib.parse import urlsplit
 
 root = Path(__file__).resolve().parent
@@ -30,10 +32,21 @@ if endpoint:
     # A free host can lose a temporary job. The pending queue remains in browser storage.
     batch = batch.replace("saved.job=null;job=null;", "saved.job=null;job=null;csrf='';localStorage.removeItem('discover-hosted-token:'+window.DiscoverMetadataOrigin);")
     batch = batch.replace("if(!csrf)csrf=(await request('config')).csrf;", "if(!csrf)await configure(job.useAI);")
+    # Newly injected token calls also use the selected personal/demo storage.
+    batch = re.sub(r'(?<!\|)localStorage\.(getItem|setItem|removeItem)', r'(window.DiscoverStorage||localStorage).\1', batch)
     (target / 'hosted-enrichment.js').write_text(batch,encoding='utf-8')
     html = html.replace('No automatic external book lookup or paid AI service is used in this version.', 'Optional enrichment sends public book titles, authors, ISBNs and source descriptions to Google Books, Open Library and, when selected, Gemini. Your notes and preferences remain in this browser. Provider limits can pause processing.')
     html = html.replace('<script defer src="hosted-config.js">','<script defer src="hosted-connected.js"></script><script defer src="hosted-config.js">')
     (target/'hosted-connected.js').write_text("document.getElementById('metadata-latest').hidden=true;",encoding='utf-8')
+def versioned(match):
+    name = match.group(2)
+    asset = target / name
+    if not asset.is_file():
+        return match.group(0)
+    digest = hashlib.sha256(asset.read_bytes()).hexdigest()[:12]
+    return match.group(1) + name + '?v=' + digest + match.group(3)
+html = re.sub(r'((?:src|href)=")([^"?]+\.(?:js|css))(\")', versioned, html)
+html = html.replace('<html lang="en">','<html lang="en" data-release="20261101-modes">')
 page.write_text(html, encoding='utf-8')
 (target / '.nojekyll').touch()
 (target / 'hosted-mode.js').write_text("""'use strict';
