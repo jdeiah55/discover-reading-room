@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: discover-metadata
+    runtime: python
+    plan: free
+    buildCommand: pip install -r service/requirements.txt
+    startCommand: gunicorn --chdir service --workers 1 --threads 8 --timeout 120 app:app
+    healthCheckPath: /health
+    envVars:
+      - key: DISCOVER_ALLOWED_ORIGIN
+        value: https://jdeiah55.github.io
+      - key: GOOGLE_BOOKS_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
