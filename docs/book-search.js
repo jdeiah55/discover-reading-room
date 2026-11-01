@@ -1,0 +1,42 @@
+'use strict';
+(() => {
+ const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const cache=new Map();let controller,revision=0,query='',kind='all',page=1,total=0,rows=[],busy=false;
+ const fields='key,title,author_name,subject,first_publish_year,edition_count';
+ async function json(url,signal){if(window.DiscoverLearning)return DiscoverLearning.request(url,signal);const r=await fetch(url,{signal,credentials:'omit',referrerPolicy:'no-referrer'});if(!r.ok)throw Error('Book source unavailable');return r.json();}
+ function key(doc){const k=String(doc.key||'');return /^\/?(?:works\/)?OL\d+W$/.test(k)?'/works/'+k.split('/').pop():null;}
+ function jacket(b,i){const colors=['#584c3d','#354d49','#563f50','#4e4930','#354453'];return `<div class="jacket illustrated-jacket" data-symbol="orbit" style="--cover:${colors[i%5]};--ink:#e4cd96" aria-hidden="true"><span class="cover-author">${esc((b.author_name||[]).join(' & ')||'Author not listed')}</span><span class="cover-title">${esc(b.title)}</span><span class="cover-symbol">✧</span><span class="cover-foot">DISCOVER · CONCEPT JACKET</span></div>`;}
+ function paint(){
+  $('world-status').textContent=busy?'Looking beyond the familiar shelves…':total?`${total.toLocaleString()} results from Open Library · page ${page}. Different editions are usually grouped as one work.`:'No books found. Try a shorter title, an author’s surname, or an ISBN.';
+  $('world-grid').innerHTML=rows.map((b,i)=>`<article class="book-card"><button class="world-open book-open" data-world-index="${i}">${jacket(b,i)}<div class="book-info"><h3>${esc(b.title)}</h3><p class="book-author">${esc((b.author_name||[]).join(' & ')||'Author not listed')}</p></div></button><p class="book-meta">${Number.isInteger(b.first_publish_year)?'First published '+b.first_publish_year:'Publication year not listed'}</p><span class="metadata-label">Open Library record · not individually reviewed</span><p class="reason">Open for available details and the source record.</p></article>`).join('');
+  $('world-pages').innerHTML=total>5?`<nav class="chapter-pager" aria-label="Book lookup pages"><button id="world-prev" ${page===1||busy?'disabled':''}>← Previous chapter</button><span>${page} / ${Math.ceil(total/5)}</span><button id="world-next" ${page*5>=total||busy?'disabled':''}>Turn the page →</button></nav>`:'';
+  $('world-submit').disabled=busy;
+ }
+ async function search(next=1){
+  const q=$('world-query').value.trim().slice(0,200);if(!q){$('world-query').focus();return;}
+  controller?.abort();controller=new AbortController();const rev=++revision;query=q;kind=$('world-kind').value;page=next;busy=true;rows=[];total=0;paint();
+  const params=new URLSearchParams({fields,limit:'5',page:String(page)});params.set(kind==='all'?'q':kind,kind==='isbn'?q.replace(/[-\s]/g,''):q);
+  const activeController=controller,url='https://openlibrary.org/search.json?'+params, timer=setTimeout(()=>activeController.abort(),18000);
+  try{const data=cache.get(url)||await json(url,controller.signal);if(rev!==revision)return;if(!Array.isArray(data.docs))throw Error('Unexpected response');cache.set(url,data);if(cache.size>30)cache.delete(cache.keys().next().value);rows=data.docs.filter(b=>key(b)&&typeof b.title==='string').slice(0,5);total=Math.max(0,Number(data.numFound??data.num_found)||0);busy=false;paint();DiscoverLearning.ingest(data.docs);if(page===1){const authors=[...new Set(rows.flatMap(b=>b.author_name||[]))].filter(a=>kind==='author'?BookCore.normalize(q).split(' ').every(t=>BookCore.normalize(a).includes(t)):BookCore.normalize(a)===BookCore.normalize(q)).slice(0,3);for(const author of authors)DiscoverApp.record({kind:'author',value:author});}DiscoverApp.sync();}
+  catch(e){if(rev!==revision)return;busy=false;paint();$('world-status').textContent='The book search could not connect. Check your connection and try again, or browse the reviewed collection below.';$('world-pages').innerHTML='<button id="world-retry" class="outline-button">Try that search again ↻</button>';}
+  finally{clearTimeout(timer);}
+ }
+ let detailController,detailRevision=0;
+ async function detail(i){const b=rows[i];if(!b)return;detailController?.abort();detailController=new AbortController();const rev=++detailRevision,k=key(b),url='https://openlibrary.org'+k;
+  const norm=s=>String(s).toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');const local=BookCatalog.books.find(x=>norm(x.title)===norm(b.title)&&(b.author_name||[]).some(a=>norm(a)===norm(x.author)));
+  $('world-detail').innerHTML=`<p class="eyebrow">A STORY BEYOND THE FAMILIAR</p><div class="detail-layout">${jacket(b,i)}<div><h2 id="world-title">${esc(b.title)}</h2><p>${esc((b.author_name||[]).join(' & ')||'Author not listed')}</p><p>${Number.isInteger(b.first_publish_year)?'First published '+b.first_publish_year:'Publication year not listed'}</p><p id="world-description" role="status">Looking for a description…</p><a class="outline-button" href="${url}" target="_blank" rel="noopener noreferrer">View the Open Library record ↗</a></div></div><p class="small-muted">This is community catalog information, not a completed Discover evidence review. Missing details remain unknown. Edition lengths, series order and trope matches are not inferred.</p>${local&&local.metadataStatus!=='external'?`<button class="gold-button" id="world-reviewed" data-local-id="${esc(local.id)}">Explore our reviewed story details ↗</button>`:''}`;
+  const canonical=DiscoverLearning.ingest([b])[0];if(canonical){DiscoverApp.record({kind:'book',id:canonical.id});if(canonical.metadataStatus==='external')$('world-detail').insertAdjacentHTML('beforeend',`<button class="gold-button" id="world-save" data-save-outside="${esc(canonical.id)}">${DiscoverApp.hasSaved(canonical.id)?'Remove from saved':'Save this chapter +'}</button>`);} $('world-dialog').showModal();const activeDetailController=detailController,timer=setTimeout(()=>activeDetailController.abort(),15000);
+  try{const data=cache.get(url)||await json(url+'.json',detailController.signal);if(rev!==detailRevision)return;cache.set(url,data);const description=typeof data.description==='string'?data.description:data.description?.value;DiscoverLearning.acceptDescription(canonical,description);DiscoverApp.sync();$('world-description').textContent=typeof description==='string'&&description.trim()?description.slice(0,12000):'No description is available in this source record.';}
+  catch{if(rev===detailRevision)$('world-description').textContent='The description could not be loaded. You can still open the source record.';}finally{clearTimeout(timer);}
+ }
+ $('world-form').addEventListener('submit',e=>{e.preventDefault();search();});
+ $('world-pages').addEventListener('click',e=>{if(e.target.id==='world-prev')search(page-1);if(e.target.id==='world-next')search(page+1);if(e.target.id==='world-retry')search(page);});
+ $('world-grid').addEventListener('click',e=>{const b=e.target.closest('[data-world-index]');if(b)detail(Number(b.dataset.worldIndex));});
+ $('world-dialog').addEventListener('close',()=>{detailRevision++;detailController?.abort();});
+ $('world-detail').addEventListener('click',e=>{const saved=e.target.closest('#world-save');if(saved){DiscoverApp.save(saved.dataset.saveOutside);saved.textContent=DiscoverApp.hasSaved(saved.dataset.saveOutside)?'Remove from saved':'Save this chapter +';return;}const b=e.target.closest('#world-reviewed');if(!b)return;$('world-dialog').close();const trigger=document.createElement('button');trigger.dataset.book=b.dataset.localId;document.body.append(trigger);trigger.click();trigger.remove();});
+ $('world-query').addEventListener('input',()=>{revision++;controller?.abort();busy=false;$('world-submit').disabled=false;$('world-pages').innerHTML='';$('world-status').textContent='Select Search books to look up this request.';});
+ $('world-kind').addEventListener('change',()=>{$('world-query').dispatchEvent(new Event('input'));});
+ $('explore-world').addEventListener('click',()=>mode(true));$('explore-reviewed').addEventListener('click',()=>mode(false));
+ function mode(world){$('world-search').hidden=!world;$('reviewed-search').hidden=world;$('explore-world').setAttribute('aria-pressed',String(world));$('explore-reviewed').setAttribute('aria-pressed',String(!world));$('library-total').hidden=world;if(!world){revision++;controller?.abort();busy=false;$('world-submit').disabled=false;}}
+ mode(true);
+})();

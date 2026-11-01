@@ -1,0 +1,12 @@
+'use strict';
+(() => {
+ const KEY='discover-book-feedback-v1';let records={},tonight=new Set(),revision=0;
+ try{const raw=JSON.parse(localStorage.getItem(KEY)||'{}');if(raw&&typeof raw==='object'&&!Array.isArray(raw))records=raw;}catch{}
+ const fields={genre:'genres',mood:'moods',atmosphere:'atmospheres',trope:'tropes',dynamic:'dynamics',relationship:'relationships'};
+ const emit=()=>{revision++;window.dispatchEvent(new CustomEvent('discover-feedback-change'));};
+ function save(id,value){const b=window.PersonalLibrary?.books.find(b=>b.id===id);if(!b)return;const reasons=(Array.isArray(value.reasons)?value.reasons:[]).filter(r=>fields[r.field]&&['like','dislike'].includes(r.sentiment)&&typeof r.value==='string'&&(b[fields[r.field]]||[]).some(v=>BookCore.normalize(BookCore.canonicalLabel(r.field,v))===BookCore.normalize(BookCore.canonicalLabel(r.field,r.value)))).map(r=>({field:r.field,value:BookCore.canonicalLabel(r.field,r.value),sentiment:r.sentiment}));const next={...records,[id]:{excluded:value.excluded===true,reasons,note:String(value.note||'').trim().slice(0,1000)}};try{localStorage.setItem(KEY,JSON.stringify(next));}catch{throw Error('Your browser could not save this feedback. Free storage or allow browser storage, then try again.');}records=next;emit();}
+ function dismiss(id){tonight.add(id);emit();}
+ function eligible(id){return !tonight.has(id)&&records[id]?.excluded!==true;}
+ function affinity(book){let score=0;const reasons=[];for(const [id,item]of Object.entries(records)){if(!window.PersonalLibrary?.contains(id))continue;for(const r of item.reasons||[]){if(!fields[r.field]||!(book[fields[r.field]]||[]).some(v=>BookCore.normalize(BookCore.canonicalLabel(r.field,v))===BookCore.normalize(BookCore.canonicalLabel(r.field,r.value))))continue;const positive=r.sentiment==='like';score+=positive?24:-24;const text=(positive?'You enjoy ':'You prefer less ')+r.value+', based on your book feedback.';if(!reasons.includes(text))reasons.push(text);}}return {score:Math.max(-120,Math.min(120,score)),reasons};}
+ window.ReaderFeedback={get:id=>records[id]||{excluded:false,reasons:[],note:''},save,dismiss,eligible,affinity,fields,resetTonight(){tonight.clear();emit();},get hasTaste(){return Object.entries(records).some(([id,r])=>window.PersonalLibrary?.contains(id)&&(r.reasons||[]).length);},get dismissedCount(){return tonight.size;},get revision(){return revision;}};
+})();
