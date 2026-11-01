@@ -3,7 +3,7 @@
  const button=document.getElementById('try-demo-library');
  const panel=document.getElementById('demo-library-intro');
  const refresh=()=>{panel.hidden=PersonalLibrary.loaded;};
- const demoLink=document.createElement('a');demoLink.href='?demo=1';demoLink.className='text-button';demoLink.textContent='Open the demonstration directly ↗';panel.append(demoLink);
+ const demoLink=document.createElement('a');demoLink.href='?demo=1'+(new URLSearchParams(location.search).has('v')?'&v='+encodeURIComponent(new URLSearchParams(location.search).get('v')):'');demoLink.className='text-button';demoLink.textContent='Open the demonstration directly ↗';panel.append(demoLink);
  button.addEventListener('click',()=>{
   if(window.DiscoverStorage&&DiscoverStorage.mode!=='demo'){const u=new URL(location.href);u.searchParams.delete('mode');u.searchParams.set('demo','1');u.hash='';location.assign(u.href);return;}
   // A stale click must never replace an existing reader collection.
