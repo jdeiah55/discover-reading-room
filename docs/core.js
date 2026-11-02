@@ -139,6 +139,7 @@ function descriptionTerms(text,profile){
  const authors=[...new Set(books.flatMap(b=>[b.author,...b.additionalAuthors]))];for(const author of authors)lexicon.push({label:author,aliases:[normalize(author)],need:[],author});
  const moodPhrases={Cozy:['cosy','comforting'],Heartwarming:['heart warming','feel good'],Hopeful:['uplifting','optimistic'],Reflective:['introspective','thought provoking'],Witty:['witty and funny']};
  for(const item of lexicon)if(moodPhrases[item.label])item.aliases=[...new Set([...item.aliases,...moodPhrases[item.label]])];
+ for(const item of lexicon)if(!item.author)item.aliases=[...new Set(item.aliases.flatMap(alias=>root.StoryInterpreter?.phraseVariants(alias)||[alias]))];
  // Rank actual phrases, not a rule's longest unrelated alias.
  const phrases=lexicon.flatMap(item=>item.aliases.map(phrase=>({item,phrase}))).filter(x=>x.phrase).sort((a,b)=>b.phrase.length-a.phrase.length);
  const occupied=[],literalChunks=String(text).split(/[,;\n]+/).map(normalize);

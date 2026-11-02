@@ -18,7 +18,7 @@ Personal and demonstration modes have separate libraries, preferences, feedback,
 1. **Choose your starting point.** Open personal mode to bring your own collection, or demonstration mode to explore the supplied sample.
 2. **Add books.** Upload a CSV, TSV or TXT list, or use **Add one book**. **Add another book list** merges additions without replacing existing entries. Replacing the entire collection is a separate confirmed action.
 3. **Let details enrich automatically.** Enrichment starts after an import or addition. Books added during an active run join its queue. You can use the available library information while processing continues.
-4. **Express what you want.** Use **Describe the feeling** for a recognized descriptive request, or **Curate my read** for explicit filter selections. Available filter choices reflect the current library's information.
+4. **Express what you want.** Use **Describe the feeling** for a recognized descriptive request, or **Curate my read** for explicit filter selections. Supported wording includes character-role equivalents and selected mood, trope and structure synonyms, such as heroine/woman/lady, hopeful/optimistic, secret/hidden identity, and duet/duology. Interpretation remains bounded; unrecognized details are not silently discarded, and synonyms do not add evidence to a book. Available filter choices reflect the current library's information.
 5. **Inspect the suggestions.** Open a book's matching details to distinguish supported conditions from unresolved information. When no complete match is established, qualified partial alternatives may appear.
 6. **Refine and preserve your experience.** Save titles, tune your taste, correct book details, give feedback or exclude a title from recommendations. Export a complete backup to move or preserve your browser data.
 
@@ -110,7 +110,7 @@ cd service
 python -m unittest test_gateway -v
 ```
 
-On 1 November 2026, these JavaScript files passed 30 tests and the gateway passed five tests. Isolated browser checks with fake provider responses also covered automatic import/addition, active-queue additions, duplicate avoidance, opt-out persistence and fresh/demo entry. They require no API keys. Separate live checks are recorded in `connection-check.json`. These checks do not establish overall metadata accuracy or reader satisfaction.
+On 1 November 2026, these JavaScript files passed 30 tests and the gateway passed five tests. On 2 November, the JavaScript checks passed 36 tests, including equivalent wording, negation, role direction, unknown details and author-name preservation. Isolated browser checks with fake provider responses also covered automatic import/addition, active-queue additions, duplicate avoidance, opt-out persistence and fresh/demo entry. They require no API keys. Separate live checks are recorded in `connection-check.json`. These checks do not establish overall metadata accuracy or reader satisfaction.
 
 ## Privacy, attribution and limits
 

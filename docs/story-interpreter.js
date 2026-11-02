@@ -1,6 +1,25 @@
 'use strict';
 (() => {
  const normalize=s=>BookCore.normalize(s);
+ // Expand the vocabulary, never the reader's text or stored book facts. Role
+ // equivalents apply inside supported narrative phrases, not to author names.
+ const roleGroups=[['female lead','female protagonist','heroine','fmc','woman','lady','girl'],['male lead','male protagonist','hero','mmc','man','guy','boy']];
+ const phraseGroups=[
+  ['cozy','cosy','comforting'],['heartwarming','heart warming','feel good'],
+  ['hopeful','uplifting','optimistic'],['reflective','introspective','contemplative','thought provoking'],
+  ['witty','humorous','funny'],['dark humor','dark humour','black humor','black humour'],
+  ['enemies to lovers','enemies become lovers'],['friends to lovers','friends become lovers'],
+  ['fake dating','pretend dating','pretend relationship'],['second chance','second chance romance','rekindled romance'],
+  ['hidden identity','secret identity'],['organized crime','organised crime'],
+  ['duet','duology','two book series'],['trilogy','three book series'],
+  ['standalone','stand alone','stand alone novel']
+ ];
+ function phraseVariants(phrase){const value=normalize(phrase),variants=new Set([value]);
+  for(const group of roleGroups){const matcher=new RegExp('\\b(?:'+group.join('|')+')\\b','g');for(const current of [...variants]){const matches=[...current.matchAll(matcher)];for(const match of matches)for(const role of group)variants.add(current.slice(0,match.index)+role+current.slice(match.index+match[0].length));}}
+  for(const group of phraseGroups)if(group.includes(value))for(const alias of group)variants.add(alias);
+  return [...variants];
+ }
+ function narrativePattern(pattern){return pattern.replace(/\bfemale lead\b|\bheroine\b|\bfmc\b/g,'(?:female lead|female protagonist|heroine|fmc|woman|lady|girl)').replace(/\bmale lead\b|\bhero\b|\bmmc\b/g,'(?:male lead|male protagonist|hero|mmc|man|guy|boy)');}
  const rules=[
   {label:'Dystopian setting',need:['Dystopian setting','Dystopian','Dystopia','Dystopian fiction'],category:'setting',weight:2,patterns:[/\b(?:dystopian|dystopic)(?: (?:world|society|setting|fiction|novel|story))?\b/g]},
   {label:'Survival stakes',need:['Survival stakes','Survival','Fight for survival'],category:'stakes',weight:2,patterns:[/\b(?:everyone (?:is )?)?(?:fighting|fight|struggling|struggle)(?: to survive| for (?:their )?lives| for survival)\b/g,/\bsurvival stakes\b/g]},
@@ -8,8 +27,8 @@
   {label:'Secret society targeting heroine',need:['Secret society targeting heroine'],category:'opposition',weight:3,patterns:[/\bsecret (?:society|organization)(?: that| which)? (?:has |had )?(?:sent|sends|hired|hires|dispatches|dispatched) (?:an? )?(?:assassin|killer)(?: to)? (?:kill|murder|hunt|eliminate) (?:her|the heroine|the female lead)\b/g,/\b(?:the )?(?:heroine|female lead|fmc|she) (?:is |gets )?(?:hunted|targeted|pursued) by (?:a )?secret (?:society|organization)\b/g,/\bsecret (?:society|organization) (?:hunts|targets|pursues|wants to kill) (?:her|the heroine|the female lead)\b/g]},
   {label:'Assassin-to-lovers',literal:false,need:['Assassin-to-lovers','Assigned assassin becomes heroine’s love interest'],category:'romance',weight:3,patterns:[/\b(?:an? )?assassin(?: (?:who|that) (?:was |is )?| (?:was |is )?)?(?:sent|hired|assigned)(?: to)? (?:kill|murder|eliminate) (?:her|the heroine|the female lead)(?: but| and| until)(?: they| the two)? (?:fall in love|fall for each other|become lovers)(?: instead)?\b/g,/\b(?:an? )?assassin(?: to)? (?:kill|murder|eliminate) (?:her|the heroine|the female lead)(?: but| and| until)(?: they| the two)? (?:fall in love|fall for each other|become lovers)(?: instead)?\b/g]}
  ];
- function connectedRules(){return (window.LibraryMetadata?.storyCatalog?.concepts||[]).map(c=>({label:c.label,need:[],factId:c.id,category:c.category,weight:c.weight,relational:['character','connection','opposition'].includes(c.category),patterns:[...[c.label,...c.aliases].map(phrase=>new RegExp('\\b'+normalize(phrase)+'\\b','g')),...(c.patterns||[]).map(pattern=>new RegExp('\\b'+pattern+'\\b','g'))]}));}
- function activeRules(){return [...connectedRules(),...rules];}
+ function connectedRules(){return (window.LibraryMetadata?.storyCatalog?.concepts||[]).map(c=>({label:c.label,need:[],factId:c.id,category:c.category,weight:c.weight,relational:['character','connection','opposition'].includes(c.category),patterns:[...new Set([c.label,...c.aliases].flatMap(phraseVariants))].map(phrase=>new RegExp('\\b'+phrase+'\\b','g')).concat((c.patterns||[]).map(pattern=>new RegExp('\\b'+narrativePattern(pattern)+'\\b','g')))}));}
+ function activeRules(){return [...connectedRules(),...rules.map(rule=>({...rule,patterns:rule.patterns.map(pattern=>new RegExp(narrativePattern(pattern.source),pattern.flags))}))];}
  function prepare(text){const source=normalize(text),terms=[],spans=[],notes=[],catalogSpans=[];for(const field of ['genre','mood','atmosphere','trope','dynamic','relationship','format'])for(const value of BookCatalog.choices[field]||[]){const phrase=normalize(value);if(!phrase)continue;const re=new RegExp('\\b'+phrase+'\\b','g');for(const m of source.matchAll(re))catalogSpans.push([m.index,m.index+m[0].length]);}for(const rule of activeRules()){const patterns=[...rule.patterns,...(rule.literal===false?[]:[new RegExp('\\b'+normalize(rule.label)+'\\b','g')])];for(const pattern of patterns){pattern.lastIndex=0;for(const match of source.matchAll(pattern)){if(catalogSpans.some(([a,b])=>match.index>=a&&match.index+match[0].length<=b&&(match.index>a||match.index+match[0].length<b)))continue;const prefix=source.slice(Math.max(0,match.index-24),match.index),negative=BookCore.isNegatedPrefix(prefix);terms.push({label:rule.label,need:rule.need,factId:rule.factId,category:rule.category,weight:rule.weight,relational:rule.weight===3,negative,raw:match[0]});spans.push([match.index,match.index+match[0].length]);}}}
  const immersive=/\b(?:(?:i want to be|i would like to be) )?(?:(?:fully|completely) )?immersed(?: in)?\b/g;for(const m of source.matchAll(immersive)){spans.push([m.index,m.index+m[0].length]);notes.push('Immersive reading experience: a reading preference, rather than a verified plot detail.');}
  let chars=[...source];for(const [a,b]of spans)for(let i=a;i<b;i++)chars[i]=' ';return {remaining:chars.join('').replace(/\bexcept for\b/g,' '),terms,notes:[...new Set(notes)]};}
@@ -30,5 +49,5 @@
   const converted=rows.map(row=>{const checks=row.checks.map(c=>({...c,term:termFor(c)}));return {...row,checks,matched:checks.filter(c=>c.pass&&!c.term.negative),missing:checks.filter(c=>!c.pass&&!c.term.negative),hardFail:checks.some(c=>!c.pass&&['exclude','maxPages','author','query','shelf'].includes(c.field))};});
   return {terms:converted[0]?.checks.map(c=>c.term)||[],rows:converted};
  }
- window.StoryInterpreter={prepare,key,category,closest,curated,sharedMatches,weight};
+ window.StoryInterpreter={prepare,key,category,closest,curated,sharedMatches,weight,phraseVariants};
 })();
